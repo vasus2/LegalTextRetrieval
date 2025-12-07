@@ -1,0 +1,83 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+.virtualenv
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Data files (generated/downloaded datasets)
+data/
+*.json
+!requirements.txt
+
+# BM25 output files
+bm25-files/
+*.tsv
+*.csv
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# NLTK data (if downloaded locally)
+nltk_data/
+
+# Model checkpoints and weights
+*.pt
+*.pth
+*.h5
+*.pkl
+*.pickle
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
