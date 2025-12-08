@@ -13,15 +13,11 @@ from datasets import load_dataset
 import nltk
 from nltk.tokenize import sent_tokenize
 
-# Download NLTK models quietly if not already present
 nltk.download('punkt', quiet=True)
-
 tqdm.pandas()
 
-############################################################################################################
-# ----- Step 0: Get case data (from Hugging Face LePaRD) -----
-############################################################################################################
 
+# Get case data (from Hugging Face LePaRD)
 def make_case_data_from_hf(n=None, split="train", streaming=False):
     """
     Loads LePaRD dataset directly from Hugging Face instead of local CAP data.
@@ -61,10 +57,7 @@ def make_case_data_from_hf(n=None, split="train", streaming=False):
 
     print(f"\nSaved {len(data)} cases to ./data/case_data.json")
 
-############################################################################################################
-# ----- Step 1: Tokenize Cases (Lightweight NLTK Version) -----
-############################################################################################################
-
+# tokenize
 def legal_sentence_tokenize(text):
     """
     Tokenizes text into sentences using lightweight NLTK tokenizer.
@@ -92,10 +85,7 @@ def tokenize_cases_nltk():
 
     print(f"Saved tokenized data: {len(case_texts)} cases → ./data/case_data_tokenized.json")
 
-############################################################################################################
-# ----- Step 2: Citation Matcher ----- #
-############################################################################################################
-
+# citation matcher
 def citation_matcher(case, quoted_precedent):
     """
     Sub-Routine: Given a list of quoted precedent from precedent_extractor,
@@ -140,10 +130,8 @@ def citation_matcher(case, quoted_precedent):
         return None
     return extracted
 
-############################################################################################################
-# ----- Step 3: Assign Passage IDs ----- #
-############################################################################################################
 
+# assign passage IDs
 def assign_passage_id(passages_origin_filename = './data/citations_origin.json', passage_dict_filename = './data/passage_dict.json'):
     """
     Assigns a unique passage_id to each unique passage and saves the mapping of passage_id to passage.
@@ -188,10 +176,8 @@ def assign_passage_id(passages_origin_filename = './data/citations_origin.json',
     with open(passage_dict_filename, 'w') as fp:
         json.dump({'meta': f'Passage dictionary on {date.today()}', 'data': flat_dict}, fp)
 
-############################################################################################################
-# ----- Step 4: Context Wrapper (for completeness) ----- #
-############################################################################################################
 
+# context wrapper
 def context_wrapper(training_filename='./data/training_data.csv.gz', num_cores=4, batch_size=500):
     """
     Parallelizes get_destination_context (optional downstream use)
@@ -199,13 +185,9 @@ def context_wrapper(training_filename='./data/training_data.csv.gz', num_cores=4
     print("Context wrapper placeholder — this step depends on citation alignment output.")
     # If you build retrieval instead, you can skip this entirely.
 
-############################################################################################################
-# ----- Main Entrypoint ----- #
-############################################################################################################
-
+# main entrypoint
 if __name__ == "__main__":
     # Step 0: Load and save data from Hugging Face
     # make_case_data_from_hf(n=5000)  # Uncomment for initial run
 
-    # Step 1: Lightweight tokenization
     tokenize_cases_nltk()

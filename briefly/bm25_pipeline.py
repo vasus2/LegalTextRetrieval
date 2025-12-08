@@ -4,20 +4,12 @@ import random
 import pandas as pd
 from tqdm import tqdm
 
-# ============================================================
-# CONFIG
-# ============================================================
-
 INPUT_FILE = "./data/case_data_tokenized.json"
 OUTPUT_DIR = "./bm25-files"
-NUM_EXAMPLES = 5000  # adjust as needed
+NUM_EXAMPLES = 5000
 DEV_SPLIT = 0.1
 TEST_SPLIT = 0.1
 MAX_QUERY_WORDS = 100
-
-# ============================================================
-# MAIN
-# ============================================================
 
 if __name__ == "__main__":
     print("Loading tokenized case data...")
@@ -30,9 +22,6 @@ if __name__ == "__main__":
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     docs_path = os.path.join(OUTPUT_DIR, "docs00.json")
 
-    # ============================================================
-    # 1️⃣ Write BM25 corpus (docs00.json)
-    # ============================================================
     with open(docs_path, "w") as outfile:
         for i, case in enumerate(tqdm(data, desc="Writing docs")):
             doc = {
@@ -42,11 +31,8 @@ if __name__ == "__main__":
             json.dump(doc, outfile)
             outfile.write("\n")
 
-    print(f"✅ Wrote BM25 corpus to {docs_path}")
+    print(f"Wrote BM25 corpus to {docs_path}")
 
-    # ============================================================
-    # 2️⃣ Split into train/dev/test
-    # ============================================================
     random.shuffle(data)
     n_total = len(data)
     n_dev = int(n_total * DEV_SPLIT)
@@ -58,9 +44,6 @@ if __name__ == "__main__":
 
     print(f"Split into: {len(train_data)} train / {len(dev_data)} dev / {len(test_data)} test")
 
-    # ============================================================
-    # 3️⃣ Write BM25 input queries
-    # ============================================================
     def write_queries(filename, examples):
         with open(os.path.join(OUTPUT_DIR, filename), "w") as outfile:
             for idx, case in enumerate(examples):
@@ -71,12 +54,9 @@ if __name__ == "__main__":
     write_queries("bm25_input_dev.tsv", dev_data)
     write_queries("bm25_input_test.tsv", test_data)
 
-    print("✅ Wrote BM25 query files:")
+    print("Wrote BM25 query files:")
     print(f"   {os.path.join(OUTPUT_DIR, 'bm25_input_dev.tsv')}")
     print(f"   {os.path.join(OUTPUT_DIR, 'bm25_input_test.tsv')}")
 
-    # ============================================================
-    # Done
-    # ============================================================
-    print("\n🎉 BM25 data preparation complete! You can now run Anserini commands such as:")
+    print("\nBM25 data preparation complete! You can now run Anserini commands such as:")
     print("   bin/IndexCollection -collection JsonCollection -input bm25-files -index indexes/bm25 -generator DefaultLuceneDocumentGenerator")

@@ -3,9 +3,7 @@ import pandas as pd
 import json
 import os
 
-# -------------------------------------------------------
-# Step 1. Load corpus
-# -------------------------------------------------------
+# load corpus
 bm25_dir = os.path.join(os.path.dirname(__file__), "../bm25-files")
 bm25_path = os.path.abspath(os.path.join(bm25_dir, "docs00.json"))
 
@@ -17,16 +15,11 @@ with open(bm25_path, "r") as f:
 
 print(f"Loaded {len(docs)} documents from {bm25_path}")
 
-# -------------------------------------------------------
-# Step 2. Tokenize corpus & initialize BM25
-# -------------------------------------------------------
 tokenized_corpus = [doc.lower().split() for doc in docs]
 bm25 = BM25Okapi(tokenized_corpus)
 print("BM25 index built.\n")
 
-# -------------------------------------------------------
-# Step 3. Define test queries
-# -------------------------------------------------------
+# define test queries
 queries = [
     "precedent ruling on due process",
     "freedom of speech first amendment cases",
@@ -38,9 +31,7 @@ queries = [
 top_k = 10
 all_results = []
 
-# -------------------------------------------------------
-# Step 4. Run retrieval for each query
-# -------------------------------------------------------
+# run retrieval for each query
 for qid, query in enumerate(queries, start=1):
     tokenized_query = query.lower().split()
     scores = bm25.get_scores(tokenized_query)
@@ -49,7 +40,7 @@ for qid, query in enumerate(queries, start=1):
     top_docs = [docs[i] for i in top_indices]
     top_scores = [scores[i] for i in top_indices]
 
-    # Save top-k for this query
+    # save top-k for this query
     for rank, (doc, score) in enumerate(zip(top_docs, top_scores), start=1):
         all_results.append({
             "Query ID": qid,
@@ -61,9 +52,6 @@ for qid, query in enumerate(queries, start=1):
 
     print(f"Processed Query {qid}: {query}")
 
-# -------------------------------------------------------
-# Step 5. Save results & show summary
-# -------------------------------------------------------
 df_results = pd.DataFrame(all_results)
 out_csv = os.path.join(bm25_dir, "bm25_multiquery_top10.csv")
 df_results.to_csv(out_csv, index=False)

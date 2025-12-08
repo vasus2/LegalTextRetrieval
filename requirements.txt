@@ -11,3 +11,4 @@ joblib
 tqdm
 nltk
 rank_bm25
+streamlit

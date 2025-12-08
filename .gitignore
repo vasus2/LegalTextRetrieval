@@ -75,9 +75,13 @@ nltk_data/
 *.h5
 *.pkl
 *.pickle
+*.npy
 
 # Temporary files
 *.tmp
 *.bak
 *.swp
 *~
+
+# Test files
+test_retriever.py
