@@ -3,7 +3,7 @@
 # Briefly - Quick Start Script
 # This script launches the Streamlit UI for the legal precedent search system
 
-echo "🚀 Starting Briefly - Legal Precedent Search System..."
+echo "Starting Briefly - Legal Precedent Search System..."
 echo ""
 
 # Check if virtual environment is activated

@@ -33,6 +33,14 @@ except (ImportError, RuntimeError) as e:
     logger = logging.getLogger(__name__)
     logger.warning(f"Hybrid retrieval not available: {e}")
 
+try:
+    from citation_graph import CitationGraph
+    CITATION_AVAILABLE = True
+except (ImportError, RuntimeError) as e:
+    CITATION_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.warning(f"Citation graph not available: {e}")
+
 # ============================================================
 # Configuration
 # ============================================================
@@ -308,6 +316,17 @@ def load_hybrid_retriever():
         logger.error(f"Error loading hybrid retriever: {e}")
         return None
 
+@st.cache_resource
+def load_citation_graph():
+    """Load and cache the citation graph."""
+    if not CITATION_AVAILABLE:
+        return None
+    try:
+        return CitationGraph()
+    except Exception as e:
+        logger.error(f"Error loading citation graph: {e}")
+        return None
+
 def search_cases(query: str, top_k: int = 10, method: str = "bm25") -> List[dict]:
     """
     Search for legal cases using specified retrieval method.
@@ -530,9 +549,62 @@ def render_result_card(result: dict):
                 f"**{score_type} Score:** `{score_value:.3f}`"
             )
         
+        # Citation metrics (if available)
+        citation_graph = load_citation_graph()
+        if citation_graph and citation_graph.case_exists(result['case_id']):
+            metrics = citation_graph.get_citation_metrics(result['case_id'])
+            citation_parts = []
+            
+            if metrics['citation_count'] > 0:
+                citation_parts.append(f"📚 Cited by **{metrics['citation_count']}** cases")
+            if metrics['cites_count'] > 0:
+                citation_parts.append(f"🔗 Cites **{metrics['cites_count']}** cases")
+            
+            if citation_parts:
+                st.caption(" • ".join(citation_parts))
+        
         # Snippet
         st.markdown("**Preview:**")
         st.markdown(f"> {result['snippet']}")
+        
+        # Citation exploration buttons
+        citation_graph = load_citation_graph()
+        if citation_graph and citation_graph.case_exists(result['case_id']):
+            metrics = citation_graph.get_citation_metrics(result['case_id'])
+            
+            if metrics['citation_count'] > 0 or metrics['cites_count'] > 0:
+                st.markdown("**Explore Citations:**")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if metrics['citation_count'] > 0:
+                        if st.button(
+                            f"📚 Show {metrics['citation_count']} citing cases",
+                            key=f"citing_{result['case_id']}_{result['rank']}",
+                            use_container_width=True
+                        ):
+                            # Store citation exploration request in session state
+                            st.session_state['citation_explore'] = {
+                                'type': 'citing',
+                                'case_id': result['case_id'],
+                                'case_name': result['title']
+                            }
+                            st.rerun()
+                
+                with col2:
+                    if metrics['cites_count'] > 0:
+                        if st.button(
+                            f"🔗 Show {metrics['cites_count']} cited cases",
+                            key=f"cited_{result['case_id']}_{result['rank']}",
+                            use_container_width=True
+                        ):
+                            # Store citation exploration request in session state
+                            st.session_state['citation_explore'] = {
+                                'type': 'cited',
+                                'case_id': result['case_id'],
+                                'case_name': result['title']
+                            }
+                            st.rerun()
         
         # Expandable full text
         if result['full_text']:
@@ -613,6 +685,47 @@ def main():
     
     # Render search form
     query, top_k, search_clicked, method = render_search_form()
+    
+    # Handle citation exploration (if triggered from a result card)
+    if 'citation_explore' in st.session_state:
+        explore_data = st.session_state['citation_explore']
+        citation_graph = load_citation_graph()
+        
+        if citation_graph:
+            st.info(f"**Citation Exploration:** {explore_data['case_name']}")
+            
+            if explore_data['type'] == 'citing':
+                # Show cases that cite this case
+                citing_cases = citation_graph.get_citing_cases(explore_data['case_id'])
+                st.subheader(f"Cases Citing This Case ({len(citing_cases)})")
+                
+                if citing_cases:
+                    for i, case in enumerate(citing_cases, 1):
+                        st.markdown(f"**{i}. {case['name']}**")
+                        st.caption(f"Citation: {case['cite']} • Cited by {case['citation_count']} cases")
+                        st.divider()
+                else:
+                    st.info("No citing cases found in the corpus.")
+            
+            elif explore_data['type'] == 'cited':
+                # Show cases cited by this case
+                cited_cases = citation_graph.get_cited_cases(explore_data['case_id'])
+                st.subheader(f"Cases Cited by This Case ({len(cited_cases)})")
+                
+                if cited_cases:
+                    for i, case in enumerate(cited_cases, 1):
+                        st.markdown(f"**{i}. {case['name']}**")
+                        st.caption(f"Citation: {case['cite']} • Cited by {case['citation_count']} cases")
+                        st.divider()
+                else:
+                    st.info("No cited cases found in the corpus.")
+            
+            # Clear the exploration state
+            if st.button("← Back to search"):
+                del st.session_state['citation_explore']
+                st.rerun()
+        
+        st.stop()
     
     # Handle search
     if search_clicked:
