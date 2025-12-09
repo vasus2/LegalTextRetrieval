@@ -1,15 +1,3 @@
-"""
-Build Citation Graph
-
-Constructs a citation graph from case data by:
-1. Loading all cases from case_data.json
-2. Extracting citation strings from cites_to field
-3. Fuzzy matching citations to case IDs in the corpus
-4. Building bidirectional graph structure
-5. Calculating citation metrics
-6. Saving to citation_graph.json
-"""
-
 import json
 import os
 from typing import Optional
@@ -19,7 +7,6 @@ from tqdm import tqdm
 
 
 def load_cases(case_file: str = "./data/case_data.json") -> dict:
-    """Load case data from JSON file."""
     print(f"Loading cases from {case_file}...")
     with open(case_file, 'r') as f:
         data = json.load(f)
@@ -30,15 +17,6 @@ def load_cases(case_file: str = "./data/case_data.json") -> dict:
 
 
 def build_citation_index(cases: list) -> dict:
-    """
-    Build an index mapping citation strings to case IDs.
-    
-    Args:
-        cases: List of case dictionaries
-        
-    Returns:
-        Dict mapping case_id to citation string
-    """
     citation_index = {}
     
     for case in cases:
@@ -53,26 +31,13 @@ def build_citation_index(cases: list) -> dict:
 
 
 def match_citation_to_case(citation_str: str, citation_index: dict, threshold: int = 85) -> Optional[str]:
-    """
-    Match a citation string to a case ID using fuzzy matching.
-    
-    Args:
-        citation_str: Citation string to match
-        citation_index: Dict of case_id -> citation_string
-        threshold: Minimum similarity score (0-100)
-        
-    Returns:
-        Matched case_id or None
-    """
     if not citation_str:
         return None
     
-    # Try exact match first
     for case_id, cite in citation_index.items():
         if cite == citation_str:
             return case_id
     
-    # Fuzzy match
     choices = list(citation_index.values())
     result = process.extractOne(
         citation_str,
@@ -83,7 +48,6 @@ def match_citation_to_case(citation_str: str, citation_index: dict, threshold: i
     
     if result:
         matched_cite, score, _ = result
-        # Find case_id for matched citation
         for case_id, cite in citation_index.items():
             if cite == matched_cite:
                 return case_id
@@ -92,23 +56,12 @@ def match_citation_to_case(citation_str: str, citation_index: dict, threshold: i
 
 
 def build_graph(cases: list) -> dict:
-    """
-    Build citation graph from cases.
-    
-    Returns:
-        Dict with nodes, edges, and reverse_edges
-    """
-    print("\nBuilding citation graph...")
-    
-    # Build citation index for matching
     citation_index = build_citation_index(cases)
     
-    # Initialize graph structures
     nodes = {}
-    edges = defaultdict(list)  # case_id -> [cited_case_ids]
-    reverse_edges = defaultdict(list)  # case_id -> [citing_case_ids]
+    edges = defaultdict(list)
+    reverse_edges = defaultdict(list)
     
-    # Add all cases as nodes
     for case in cases:
         case_id = str(case['id'])
         nodes[case_id] = {
@@ -116,10 +69,9 @@ def build_graph(cases: list) -> dict:
             'cite': case.get('cite', ''),
             'court': case.get('court', ''),
             'date': case.get('date', ''),
-            'citation_count': 0  # Will be updated later
+            'citation_count': 0
         }
     
-    # Extract citation relationships
     matched_count = 0
     unmatched_count = 0
     
@@ -133,15 +85,12 @@ def build_graph(cases: list) -> dict:
             if not citation_str:
                 continue
             
-            # Try to match citation to a case in our corpus
             cited_case_id = match_citation_to_case(citation_str, citation_index)
             
             if cited_case_id:
-                # Add edge: case_id cites cited_case_id
                 if cited_case_id not in edges[case_id]:
                     edges[case_id].append(cited_case_id)
                 
-                # Add reverse edge: cited_case_id is cited by case_id
                 if case_id not in reverse_edges[cited_case_id]:
                     reverse_edges[cited_case_id].append(case_id)
                 
@@ -149,7 +98,6 @@ def build_graph(cases: list) -> dict:
             else:
                 unmatched_count += 1
     
-    # Update citation counts
     for case_id in nodes:
         nodes[case_id]['citation_count'] = len(reverse_edges.get(case_id, []))
     
@@ -168,9 +116,6 @@ def build_graph(cases: list) -> dict:
 
 
 def save_graph(graph: dict, output_file: str = "./data/citation_graph.json"):
-    """Save citation graph to JSON file."""
-    print(f"\nSaving citation graph to {output_file}...")
-    
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     
     with open(output_file, 'w') as f:
@@ -180,7 +125,6 @@ def save_graph(graph: dict, output_file: str = "./data/citation_graph.json"):
 
 
 def print_stats(graph: dict):
-    """Print graph statistics."""
     nodes = graph['nodes']
     edges = graph['edges']
     reverse_edges = graph['reverse_edges']
@@ -188,7 +132,6 @@ def print_stats(graph: dict):
     total_edges = sum(len(v) for v in edges.values())
     avg_citations = total_edges / len(nodes) if nodes else 0
     
-    # Find most cited cases
     most_cited = sorted(
         [(cid, len(citing)) for cid, citing in reverse_edges.items()],
         key=lambda x: x[1],
@@ -210,17 +153,9 @@ def print_stats(graph: dict):
 
 
 if __name__ == "__main__":
-    # Load cases
     cases = load_cases()
-    
-    # Build graph
     graph = build_graph(cases)
-    
-    # Print statistics
     print_stats(graph)
-    
-    # Save graph
     save_graph(graph)
     
     print("\n✓ Citation graph build complete!")
-    print("  Run the app to see citation features in action.")

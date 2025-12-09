@@ -1,8 +1,6 @@
-from typing import List, Dict, Set
-
 class Evaluator:
     @staticmethod
-    def calculate_ap(retrieved_ids: List[str], relevant_ids: Set[str]) -> float:
+    def calculate_ap(retrieved_ids, relevant_ids):
         if not relevant_ids:
             return 0.0
             
@@ -18,40 +16,13 @@ class Evaluator:
         return score / len(relevant_ids)
 
     @staticmethod
-    def calculate_map(ap_scores: List[float]) -> float:
+    def calculate_map(ap_scores):
         if not ap_scores:
             return 0.0
         return sum(ap_scores) / len(ap_scores)
 
     @staticmethod
-    def calculate_recall_at_k(retrieved_ids: List[str], relevant_ids: Set[str], k: int) -> float:
-        if not relevant_ids:
-            return 0.0
-            
-        top_k = set(retrieved_ids[:k])
-        intersection = top_k.intersection(relevant_ids)
-        return len(intersection) / len(relevant_ids)
-
-    @staticmethod
-    def calculate_recall_at_k(retrieved_ids: List[str], relevant_ids: Set[str], k: int) -> float:
-        if not relevant_ids:
-            return 0.0
-            
-        top_k = set(retrieved_ids[:k])
-        intersection = top_k.intersection(relevant_ids)
-        return len(intersection) / len(relevant_ids)
-
-    @staticmethod
-    def calculate_recall_at_k(retrieved_ids: List[str], relevant_ids: Set[str], k: int) -> float:
-        if not relevant_ids:
-            return 0.0
-            
-        top_k = set(retrieved_ids[:k])
-        intersection = top_k.intersection(relevant_ids)
-        return len(intersection) / len(relevant_ids)
-        
-    @staticmethod
-    def calculate_recall_at_k(retrieved_ids: List[str], relevant_ids: Set[str], k: int) -> float:
+    def calculate_recall_at_k(retrieved_ids, relevant_ids, k):
         if not relevant_ids:
             return 0.0
             

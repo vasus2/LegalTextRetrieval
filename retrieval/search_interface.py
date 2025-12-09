@@ -1,6 +1,4 @@
-from typing import List, Dict, Optional
 from retrieval.bm25_retriever import BM25Retriever, SearchResult
-
 
 import sys
 import os
@@ -16,7 +14,7 @@ except ImportError:
 
 
 class SearchInterface:
-    def __init__(self, corpus_path: str, metadata_path: Optional[str] = None):
+    def __init__(self, corpus_path, metadata_path=None):
         self.corpus_path = corpus_path
         self.metadata_path = metadata_path
         
@@ -37,12 +35,7 @@ class SearchInterface:
         
         self.current_method = "bm25"
     
-    def search(
-        self,
-        query: str,
-        top_k: int = 10,
-        method: str = "bm25"
-    ) -> List[Dict]:
+    def search(self, query, top_k=10, method="bm25"):
         if method == "bm25":
             return self._search_bm25(query, top_k)
         elif method == "dense" or method == "embedding":
@@ -52,21 +45,21 @@ class SearchInterface:
         else:
             raise ValueError(f"Unknown search method: {method}")
             
-    def _search_dense(self, query: str, top_k: int) -> List[Dict]:
+    def _search_dense(self, query, top_k):
         if not self.dense_retriever:
             raise NotImplementedError("Dense retrieval is not available (check logs for init errors)")
             
         results = self.dense_retriever.search(query, top_k)
         return self._standardize_results(results, "Semantic")
 
-    def _search_hybrid(self, query: str, top_k: int) -> List[Dict]:
+    def _search_hybrid(self, query, top_k):
         if not self.hybrid_retriever:
             raise NotImplementedError("Hybrid retrieval is not available")
             
         results = self.hybrid_retriever.search(query, top_k)
         return self._standardize_results(results, "Hybrid")
     
-    def _search_bm25(self, query: str, top_k: int) -> List[Dict]:
+    def _search_bm25(self, query, top_k):
         results = self.bm25_retriever.search(query, top_k=top_k)
         
         return [
@@ -85,7 +78,7 @@ class SearchInterface:
             for r in results
         ]
 
-    def _standardize_results(self, results: List[Dict], score_type: str) -> List[Dict]:
+    def _standardize_results(self, results, score_type):
         """Convert varied result formats to standard UI format"""
         standardized = []
         for r in results:
@@ -103,10 +96,10 @@ class SearchInterface:
             })
         return standardized
     
-    def get_corpus_size(self) -> int:
+    def get_corpus_size(self):
         return self.bm25_retriever.get_corpus_size()
     
-    def get_available_methods(self) -> List[str]:
+    def get_available_methods(self):
         methods = ["bm25"]
         if self.dense_retriever:
             methods.append("dense")
@@ -114,7 +107,7 @@ class SearchInterface:
             methods.append("hybrid")
         return methods
     
-    def set_method(self, method: str):
+    def set_method(self, method):
         if method not in self.get_available_methods():
             raise ValueError(f"Method {method} not available")
         self.current_method = method

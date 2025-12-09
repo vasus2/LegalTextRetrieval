@@ -1,7 +1,6 @@
-# test_hybrid.py
 from hybrid_retrieval import HybridRetriever
 
-hr = HybridRetriever(alpha=0.6)  # 0.6 BM25, 0.4 dense; you can tune
+hr = HybridRetriever(alpha=0.6)  # 0.6 BM25, 0.4 dense
 query = "contract breach commercial lease"
 
 for r in hr.search(query, top_k=5):

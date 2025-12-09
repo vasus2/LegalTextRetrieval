@@ -1,4 +1,3 @@
-# test_dense.py
 from dense_retrieval import DenseRetriever
 
 dr = DenseRetriever()

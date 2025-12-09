@@ -1,5 +1,3 @@
-# build_dense_embeddings.py
-
 import os
 import json
 import numpy as np
@@ -11,7 +9,7 @@ EMB_DIR = "./embeddings"
 EMB_MATRIX_PATH = os.path.join(EMB_DIR, "doc_embeddings.npy")
 EMB_META_PATH = os.path.join(EMB_DIR, "doc_ids.json")
 
-MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"  # you can swap to a legal-specific model
+MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 
 def load_docs(docs_path: str):
     doc_ids = []
@@ -37,19 +35,17 @@ def main():
     print(f"Loading model: {MODEL_NAME}")
     model = SentenceTransformer(MODEL_NAME)
 
-    # Encode in batches
     batch_size = 64
     all_embeddings = []
 
     for i in tqdm(range(0, len(docs), batch_size), desc="Encoding docs"):
         batch_texts = docs[i:i + batch_size]
-        # sentence-transformers returns a numpy array by default
         batch_emb = model.encode(
             batch_texts,
             batch_size=len(batch_texts),
             show_progress_bar=False,
             convert_to_numpy=True,
-            normalize_embeddings=True,  # important: makes cosine = dot product
+            normalize_embeddings=True,
         )
         all_embeddings.append(batch_emb)
 

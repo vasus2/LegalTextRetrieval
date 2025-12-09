@@ -1,20 +1,9 @@
-"""
-Briefly - Legal Precedent Search UI
-
-A clean, professional Streamlit interface for searching legal case precedents.
-This is a CS410 course project prototype demonstrating BM25-based retrieval.
-
-Author: Briefly Team
-"""
-
 import streamlit as st
 import logging
 import sys
 import os
-from typing import List, Optional
 from retrieval.bm25_retriever import BM25Retriever, SearchResult
 
-# Add briefly directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'briefly'))
 
 try:
@@ -41,10 +30,6 @@ except (ImportError, RuntimeError) as e:
     logger = logging.getLogger(__name__)
     logger.warning(f"Citation graph not available: {e}")
 
-# ============================================================
-# Configuration
-# ============================================================
-
 CORPUS_PATH = "bm25-files/docs00.json"
 METADATA_PATH = "data/case_data.json"
 DEFAULT_TOP_K = 10
@@ -54,19 +39,11 @@ MAX_TOP_K = 50
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ============================================================
-# Page Configuration
-# ============================================================
-
 st.set_page_config(
     page_title="Briefly – Legal Precedent Search",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-
-# ============================================================
-# Minimal, Clean Styling
-# ============================================================
 
 st.markdown("""
 <style>
@@ -264,10 +241,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# Backend Integration
-# ============================================================
-
 @st.cache_resource
 def load_retriever() -> Optional[BM25Retriever]:
     """
@@ -344,10 +317,8 @@ def search_cases(query: str, top_k: int = 10, method: str = "bm25") -> List[dict
         if not retriever:
             return []
         
-        # Get SearchResult objects from retriever
         results = retriever.search(query, top_k=top_k)
         
-        # Convert to standardized dict format for UI
         return [
             {
                 'rank': r.rank,
@@ -372,7 +343,6 @@ def search_cases(query: str, top_k: int = 10, method: str = "bm25") -> List[dict
         
         results = retriever.search(query, top_k=top_k)
         
-        # Standardize field names to match BM25 format
         standardized = []
         for r in results:
             standardized.append({
@@ -398,7 +368,6 @@ def search_cases(query: str, top_k: int = 10, method: str = "bm25") -> List[dict
         
         results = retriever.search(query, top_k=top_k)
         
-        # Standardize field names to match BM25 format
         standardized = []
         for r in results:
             standardized.append({
@@ -421,12 +390,7 @@ def search_cases(query: str, top_k: int = 10, method: str = "bm25") -> List[dict
     else:
         raise ValueError(f"Unknown retrieval method: {method}")
 
-# ============================================================
-# UI Components
-# ============================================================
-
 def render_header():
-    """Render the page header with title and subtitle."""
     st.title("Briefly – Legal Precedent Search")
     st.markdown(
         "A CS410 course project prototype for searching legal case precedents using BM25 retrieval."
@@ -435,37 +399,32 @@ def render_header():
 
 
 def render_corpus_info():
-    """Display information about the loaded corpus."""
     retriever = load_retriever()
     
-    if not retriever:
-        st.error("**Error:** Could not load the case corpus.")
-        st.info(f"Please ensure the corpus file exists at: `{CORPUS_PATH}`")
-        st.info("Run `python briefly/bm25_pipeline.py` to generate the corpus.")
-        st.stop()
-    
     corpus_size = retriever.get_corpus_size()
-    st.info(f"**Corpus loaded:** {corpus_size:,} legal case documents indexed and ready for search")
+    st.info(f"Corpus loaded: {corpus_size:,} legal case documents indexed and ready for search")
 
 
 def render_search_form() -> tuple[str, int, bool, str]:
-    """
-    Render the search input form.
-    
-    Returns:
-        Tuple of (query, top_k, search_clicked, method)
-    """
     with st.container():
         st.subheader("Search Query")
         
-        # Query input
         query = st.text_input(
             "Enter your legal query",
             placeholder="e.g., contract breach damages, due process rights, negligence liability...",
             help="Enter a natural language query to search for relevant legal cases"
         )
         
-        # Controls row
+        col1, col2, col3 = st.columns([2, 1, 1])
+    with st.container():
+        st.subheader("Search Query")
+        
+        query = st.text_input(
+            "Enter your legal query",
+            placeholder="e.g., contract breach damages, due process rights, negligence liability...",
+            help="Enter a natural language query to search for relevant legal cases"
+        )
+        
         col1, col2, col3 = st.columns([2, 1, 1])
         
         with col1:
@@ -476,7 +435,6 @@ def render_search_form() -> tuple[str, int, bool, str]:
             )
         
         with col2:
-            # Method selector
             method_options = ["BM25"]
             if DENSE_AVAILABLE:
                 method_options.append("Dense")
@@ -505,14 +463,7 @@ def render_search_form() -> tuple[str, int, bool, str]:
 
 
 def render_result_card(result: dict):
-    """
-    Render a single search result as a clean card.
-    
-    Args:
-        result: Dictionary containing result data
-    """
     with st.container():
-        # Rank badge and title
         col1, col2 = st.columns([1, 11])
         
         with col1:
@@ -521,7 +472,6 @@ def render_result_card(result: dict):
         with col2:
             st.markdown(f"### {result['title']}")
         
-        # Metadata row with icons
         metadata_parts = []
         if result['citation']:
             metadata_parts.append(f"Citation: {result['citation']}")
@@ -533,12 +483,10 @@ def render_result_card(result: dict):
         if metadata_parts:
             st.caption(" • ".join(metadata_parts))
         
-        # Score badge - show appropriate score type
         score_type = result.get('score_type', 'BM25')
         score_value = result['score']
         
         if score_type == 'Hybrid':
-            # Show all three scores for hybrid
             st.markdown(
                 f"**Hybrid Score:** `{score_value:.3f}` | "
                 f"BM25: `{result.get('bm25_score', 0):.2f}` | "
@@ -549,7 +497,6 @@ def render_result_card(result: dict):
                 f"**{score_type} Score:** `{score_value:.3f}`"
             )
         
-        # Citation metrics (if available)
         citation_graph = load_citation_graph()
         if citation_graph and citation_graph.case_exists(result['case_id']):
             metrics = citation_graph.get_citation_metrics(result['case_id'])
@@ -563,11 +510,9 @@ def render_result_card(result: dict):
             if citation_parts:
                 st.caption(" • ".join(citation_parts))
         
-        # Snippet
         st.markdown("**Preview:**")
         st.markdown(f"> {result['snippet']}")
         
-        # Citation exploration buttons
         citation_graph = load_citation_graph()
         if citation_graph and citation_graph.case_exists(result['case_id']):
             metrics = citation_graph.get_citation_metrics(result['case_id'])
@@ -579,11 +524,10 @@ def render_result_card(result: dict):
                 with col1:
                     if metrics['citation_count'] > 0:
                         if st.button(
-                            f"📚 Show {metrics['citation_count']} citing cases",
+                            f"Show {metrics['citation_count']} citing cases",
                             key=f"citing_{result['case_id']}_{result['rank']}",
                             use_container_width=True
                         ):
-                            # Store citation exploration request in session state
                             st.session_state['citation_explore'] = {
                                 'type': 'citing',
                                 'case_id': result['case_id'],
@@ -594,11 +538,10 @@ def render_result_card(result: dict):
                 with col2:
                     if metrics['cites_count'] > 0:
                         if st.button(
-                            f"🔗 Show {metrics['cites_count']} cited cases",
+                            f"Show {metrics['cites_count']} cited cases",
                             key=f"cited_{result['case_id']}_{result['rank']}",
                             use_container_width=True
                         ):
-                            # Store citation exploration request in session state
                             st.session_state['citation_explore'] = {
                                 'type': 'cited',
                                 'case_id': result['case_id'],
@@ -606,7 +549,6 @@ def render_result_card(result: dict):
                             }
                             st.rerun()
         
-        # Expandable full text
         if result['full_text']:
             with st.expander("View full case text"):
                 st.text_area(
@@ -622,71 +564,25 @@ def render_result_card(result: dict):
 
 
 def render_results(results: List[dict], query: str):
-    """
-    Render the search results section.
-    
-    Args:
-        results: List of result dictionaries
-        query: The search query that produced these results
-    """
     if not results:
         st.info("No cases found for this query. Try reformulating your search with different terms.")
         return
     
-    # Results header
     st.subheader(f"Search Results ({len(results)} cases)")
     st.markdown(f"**Query:** *{query}*")
     st.divider()
     
-    # Render each result
     for result in results:
         render_result_card(result)
 
 
-def render_about_section():
-    """Render the about/info section at the bottom."""
-    st.divider()
-    
-    with st.expander("ℹ️ About this prototype"):
-        st.markdown("""
-        ### Briefly – Legal Precedent Retrieval System
-        
-        This is a prototype legal case search system built as a CS410 course project.
-        
-        **Current Features:**
-        - BM25-based retrieval over ~5,000 legal cases from the LePaRD dataset
-        - Natural language query interface
-        - Ranked results with case metadata and text snippets
-        
-        **Planned Enhancements:**
-        - 🔄 Multiple retrieval methods (BM25, Embedding-based, Hybrid)
-        - 🔗 Citation-based recommendations
-        - 📊 Advanced filtering by court, date, jurisdiction
-        - 💾 Query history and saved searches
-        - 📈 Relevance feedback and personalization
-        
-        **Technology Stack:**
-        - Python, Streamlit, rank_bm25, HuggingFace datasets
-        - Data: LePaRD (Legal Precedent Retrieval Dataset)
-        """)
-
-# ============================================================
-# Main Application
-# ============================================================
-
 def main():
-    """Main application entry point."""
-    
-    # Render header
     render_header()
     
-    # Show corpus info (or error if corpus not loaded)
     render_corpus_info()
     
-    # Render search form
     query, top_k, search_clicked, method = render_search_form()
     
-    # Handle citation exploration (if triggered from a result card)
     if 'citation_explore' in st.session_state:
         explore_data = st.session_state['citation_explore']
         citation_graph = load_citation_graph()
@@ -695,7 +591,6 @@ def main():
             st.info(f"**Citation Exploration:** {explore_data['case_name']}")
             
             if explore_data['type'] == 'citing':
-                # Show cases that cite this case
                 citing_cases = citation_graph.get_citing_cases(explore_data['case_id'])
                 st.subheader(f"Cases Citing This Case ({len(citing_cases)})")
                 
@@ -708,7 +603,6 @@ def main():
                     st.info("No citing cases found in the corpus.")
             
             elif explore_data['type'] == 'cited':
-                # Show cases cited by this case
                 cited_cases = citation_graph.get_cited_cases(explore_data['case_id'])
                 st.subheader(f"Cases Cited by This Case ({len(cited_cases)})")
                 
@@ -720,21 +614,17 @@ def main():
                 else:
                     st.info("No cited cases found in the corpus.")
             
-            # Clear the exploration state
             if st.button("← Back to search"):
                 del st.session_state['citation_explore']
                 st.rerun()
         
         st.stop()
     
-    # Handle search
     if search_clicked:
-        # Validate input
         if not query or not query.strip():
             st.warning("Please enter a search query.")
             st.stop()
         
-        # Perform search with spinner
         with st.spinner(f"Searching legal precedents using {method.upper()} method..."):
             try:
                 results = search_cases(query.strip(), top_k=top_k, method=method)
@@ -744,7 +634,6 @@ def main():
                 st.exception(e)
                 st.stop()
         
-        # Display results
         render_results(results, query)
 
 

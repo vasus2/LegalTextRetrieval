@@ -1,8 +1,5 @@
-# hybrid_retriever.py
-
 import os
 import json
-from typing import List, Dict, Any
 
 import numpy as np
 from rank_bm25 import BM25Okapi
@@ -18,44 +15,38 @@ MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 class HybridRetriever:
     def __init__(
         self,
-        docs_path: str = BM25_DOCS_PATH,
-        case_file: str = CASE_FILE,
-        emb_matrix_path: str = EMB_MATRIX_PATH,
-        emb_meta_path: str = EMB_META_PATH,
-        model_name: str = MODEL_NAME,
-        alpha: float = 0.5,  # weight on BM25 vs. embeddings
+        docs_path=BM25_DOCS_PATH,
+        case_file=CASE_FILE,
+        emb_matrix_path=EMB_MATRIX_PATH,
+        emb_meta_path=EMB_META_PATH,
+        model_name=MODEL_NAME,
+        alpha=0.5,
     ):
         self.alpha = alpha
 
-        # Load docs (id + text)
         self.doc_ids, self.docs = self._load_docs(docs_path)
 
-        # BM25
         tokenized_corpus = [d.lower().split() for d in self.docs]
         self.bm25 = BM25Okapi(tokenized_corpus)
 
-        # Embeddings
-        self.emb_matrix = np.load(emb_matrix_path)  # [N, d]
+        self.emb_matrix = np.load(emb_matrix_path)
         with open(emb_meta_path) as f:
             meta = json.load(f)
         emb_doc_ids = meta["doc_ids"]
 
-        # Sanity alignment (assumes same order; if not, we must reorder)
         if emb_doc_ids != self.doc_ids:
             raise RuntimeError(
                 "Doc ID order mismatch between docs00.json and embeddings. "
                 "You should build embeddings from the same docs00.json in the same order."
             )
 
-        # Case metadata
         with open(case_file) as f:
             data = json.load(f)["data"]
         self.cases = {str(c["id"]): c for c in data}
 
-        # Model for query encoding
         self.model = SentenceTransformer(model_name)
 
-    def _load_docs(self, docs_path: str):
+    def _load_docs(self, docs_path):
         doc_ids = []
         docs = []
         with open(docs_path, "r") as f:
@@ -69,7 +60,7 @@ class HybridRetriever:
                 docs.append(text)
         return doc_ids, docs
 
-    def _normalize(self, scores: np.ndarray) -> np.ndarray:
+    def _normalize(self, scores):
         if scores.size == 0:
             return scores
         min_s = float(scores.min())
@@ -78,12 +69,10 @@ class HybridRetriever:
             return np.zeros_like(scores)
         return (scores - min_s) / (max_s - min_s)
 
-    def search(self, query: str, top_k: int = 10) -> List[Dict[str, Any]]:
-        # BM25 scores
+    def search(self, query, top_k=10):
         q_tokens = query.lower().split()
         bm25_scores = np.array(self.bm25.get_scores(q_tokens), dtype=float)
 
-        # Dense scores
         q_emb = self.model.encode(
             [query],
             convert_to_numpy=True,
@@ -91,16 +80,14 @@ class HybridRetriever:
         )[0]
         dense_scores = np.dot(self.emb_matrix, q_emb)
 
-        # Normalize
         bm25_norm = self._normalize(bm25_scores)
         dense_norm = self._normalize(dense_scores)
 
-        # Hybrid combination
         hybrid_scores = self.alpha * bm25_norm + (1.0 - self.alpha) * dense_norm
 
         top_indices = np.argsort(-hybrid_scores)[:top_k]
 
-        results: List[Dict[str, Any]] = []
+        results = []
         for rank, idx in enumerate(top_indices, start=1):
             case_id = self.doc_ids[idx]
             text = self.docs[idx]

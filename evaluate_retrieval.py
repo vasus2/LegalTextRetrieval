@@ -1,11 +1,9 @@
-
 import sys
 import os
 import json
 import random
 import logging
 from tqdm import tqdm
-from typing import List, Dict, Set
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), 'briefly'))
@@ -21,7 +19,7 @@ CORPUS_PATH = "bm25-files/docs00.json"
 METADATA_PATH = "data/case_data.json"
 CITATION_GRAPH_PATH = "data/citation_graph.json"
 
-def load_test_cases(limit: int = 100) -> List[Dict]:
+def load_test_cases(limit=100):
     logger.info("Loading citation graph and finding test cases...")
     cg = CitationGraph(CITATION_GRAPH_PATH)
     
@@ -52,7 +50,7 @@ def load_test_cases(limit: int = 100) -> List[Dict]:
     logger.info(f"Selected {len(test_samples)} test cases for evaluation.")
     return test_samples
 
-def run_evaluation(test_cases: List[Dict], methods: List[str], top_k: int = 20):
+def run_evaluation(test_cases, methods, top_k=20):
     logger.info(f"Initializing Search Interface...")
     search_interface = SearchInterface(CORPUS_PATH, METADATA_PATH)
     evaluator = Evaluator()
