@@ -2,7 +2,7 @@ import streamlit as st
 import logging
 import sys
 import os
-from retrieval.bm25_retriever import BM25Retriever, SearchResult
+from retrieval.bm25_retriever import BM25Retriever
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'briefly'))
 
@@ -242,15 +242,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 @st.cache_resource
-def load_retriever() -> Optional[BM25Retriever]:
+def load_retriever():
     """
     Load and cache the BM25 retriever.
     
     This function is cached so the BM25 index is built only once
     and reused across all queries, improving performance.
-    
-    Returns:
-        BM25Retriever instance, or None if loading fails
     """
     try:
         retriever = BM25Retriever(
@@ -300,17 +297,9 @@ def load_citation_graph():
         logger.error(f"Error loading citation graph: {e}")
         return None
 
-def search_cases(query: str, top_k: int = 10, method: str = "bm25") -> List[dict]:
+def search_cases(query, top_k=10, method="bm25"):
     """
     Search for legal cases using specified retrieval method.
-    
-    Args:
-        query: Natural language search query
-        top_k: Number of results to return
-        method: Retrieval method ("bm25", "dense", or "hybrid")
-        
-    Returns:
-        List of result dictionaries with standardized fields
     """
     if method == "bm25":
         retriever = load_retriever()
@@ -405,17 +394,7 @@ def render_corpus_info():
     st.info(f"Corpus loaded: {corpus_size:,} legal case documents indexed and ready for search")
 
 
-def render_search_form() -> tuple[str, int, bool, str]:
-    with st.container():
-        st.subheader("Search Query")
-        
-        query = st.text_input(
-            "Enter your legal query",
-            placeholder="e.g., contract breach damages, due process rights, negligence liability...",
-            help="Enter a natural language query to search for relevant legal cases"
-        )
-        
-        col1, col2, col3 = st.columns([2, 1, 1])
+def render_search_form():
     with st.container():
         st.subheader("Search Query")
         
@@ -462,7 +441,7 @@ def render_search_form() -> tuple[str, int, bool, str]:
     return query, top_k, search_clicked, method.lower()
 
 
-def render_result_card(result: dict):
+def render_result_card(result):
     with st.container():
         col1, col2 = st.columns([1, 11])
         
@@ -563,7 +542,7 @@ def render_result_card(result: dict):
         st.divider()
 
 
-def render_results(results: List[dict], query: str):
+def render_results(results, query):
     if not results:
         st.info("No cases found for this query. Try reformulating your search with different terms.")
         return
